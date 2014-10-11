@@ -1,11 +1,15 @@
 require 'spec_helper'
 
+include Rack::Test::Methods
+
 describe RateLimiting do
-  it 'has a version number' do
-    expect(RateLimiting::VERSION).not_to be nil
+
+  def app
+    lambda { |env| [200, {'Content-Type' => 'text/plain'}, ["Hello world!"]] }
   end
 
-  it 'does something useful' do
-    expect(false).to eq(true)
+  it 'response with success' do
+    get '/'
+    expect last_response.ok?
   end
 end

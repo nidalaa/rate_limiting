@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = RateLimiting::VERSION
   spec.authors       = ["Emilia"]
   spec.email         = ["e.andrzejewska@pilot.co"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
+  spec.summary       = "Simle rack middelware- for learning purposes"
+  spec.description   = "Enable requests limits in a period of time"
   spec.homepage      = ""
   spec.license       = "MIT"
 
