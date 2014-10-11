@@ -5,7 +5,7 @@ include Rack::Test::Methods
 describe RateLimiting do
 
   def app
-    RateLimiting::LimitsManager.new(lambda { |env| [200, {'Content-Type' => 'text/plain'}, ["Hello world!"]] }, {:limit => 247})
+    RateLimiting::LimitsManager.new(lambda { |env| [200, {'Content-Type' => 'text/plain'}, ["Hello world!"]] }, {:limit => 22})
   end
 
   it 'response with success' do
@@ -21,7 +21,7 @@ describe RateLimiting do
 
     it 'has value from :limit in middelware constructor' do
       get '/'
-      expect(last_response.headers['X-RateLimit-Limit']).to eq(247)
+      expect(last_response.headers['X-RateLimit-Limit']).to eq(22)
     end
   end
 
@@ -33,12 +33,17 @@ describe RateLimiting do
 
     it 'decreases after each request' do
       get '/'
-      expect(last_response.headers['X-RateLimit-Remaining']).to eq(246)
-      
-      6.times { get '/' }
-      expect(last_response.headers['X-RateLimit-Remaining']).to eq(240)
+      expect(last_response.headers['X-RateLimit-Remaining']).to eq(21)
+
+      4.times { get '/' }
+      expect(last_response.headers['X-RateLimit-Remaining']).to eq(17)
     end
   end
 
+  it 'do not allow to access app after the limit is exceed' do
+    22.times { get '/' }
+      expect(last_response.status).to eq(429)
+  end
+ 
   
 end
