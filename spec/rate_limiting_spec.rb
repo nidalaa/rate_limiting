@@ -1,11 +1,15 @@
 require 'spec_helper'
+require 'timecop'
 
 include Rack::Test::Methods
 
 describe RateLimiting do
 
   def app
-    RateLimiting::LimitsManager.new(lambda { |env| [200, {'Content-Type' => 'text/plain'}, ["Hello world!"]] }, {:limit => 22})
+    RateLimiting::LimitsManager.new(lambda do |env|
+                                      [200, {'Content-Type' => 'text/plain'}, ["Hello world!"]]
+                                    end,
+      {:limit => 22, :reset_in => 3600})
   end
 
   it 'response with success' do
@@ -38,12 +42,45 @@ describe RateLimiting do
       4.times { get '/' }
       expect(last_response.headers['X-RateLimit-Remaining']).to eq(17)
     end
+
+    it 'do not allow to access app after the limit is exceed' do
+      22.times { get '/' }
+      expect(last_response.status).to eq(429)
+    end
   end
 
-  it 'do not allow to access app after the limit is exceed' do
-    22.times { get '/' }
-      expect(last_response.status).to eq(429)
+  describe '`X-RateLimit-Reset` header' do
+    before(:each) do
+      get '/'
+      @initial_request_time = Time.now
+    end
+
+    it 'is added' do
+      expect(last_response.headers.keys).to include('X-RateLimit-Reset')
+    end
+
+    it 'counts the time to reset' do
+      Timecop.freeze(@initial_request_time + 600) do
+        get '/'
+        expect(last_response.headers['X-RateLimit-Reset']).to be_within(0.1).of(3000)
+      end
+    end
+
+    it 'resets time after specified time' do
+      Timecop.freeze(@initial_request_time + 3700) do
+        get '/'
+        expect(last_response.headers['X-RateLimit-Reset']).to be_within(0.1).of(3500)
+      end 
+    end
+
+    it 'resets limit after specifed time' do
+      10.times { get '/' }
+
+      Timecop.freeze(@initial_request_time + 3700) do
+        get '/'
+        expect(last_response.headers['X-RateLimit-Remaining']).to eq(21)
+      end 
+    end
   end
- 
   
 end

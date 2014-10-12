@@ -4,3 +4,4 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'rack-test', '~> 0.6.2'
+gem 'timecop'
