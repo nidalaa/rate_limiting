@@ -43,6 +43,14 @@ describe RateLimiting do
       expect(last_response.headers['X-RateLimit-Remaining']).to eq(17)
     end
 
+    it 'decreasces separetly for each client' do
+      5.times { get '/', {}, "REMOTE_ADDR" => "10.0.0.1" }
+      expect(last_response.headers['X-RateLimit-Remaining']).to eq(17)
+
+      2.times { get '/', {}, "REMOTE_ADDR" => "10.0.0.2" }
+      expect(last_response.headers['X-RateLimit-Remaining']).to eq(20)
+    end
+
     it 'do not allow to access app after the limit is exceed' do
       22.times { get '/' }
       expect(last_response.status).to eq(429)
@@ -81,6 +89,19 @@ describe RateLimiting do
         expect(last_response.headers['X-RateLimit-Remaining']).to eq(21)
       end 
     end
-  end
-  
+
+    it 'resets separetly for each client' do
+      5.times { get '/', {}, "REMOTE_ADDR" => "10.0.0.1" }
+      Timecop.freeze(@initial_request_time + 3700) do
+        get '/', {}, "REMOTE_ADDR" => "10.0.0.1"
+        expect(last_response.headers['X-RateLimit-Remaining']).to eq(21)
+      end
+
+      2.times { get '/', {}, "REMOTE_ADDR" => "10.0.0.2" }
+      Timecop.freeze(@initial_request_time + 3700) do
+        get '/', {}, "REMOTE_ADDR" => "10.0.0.2"
+        expect(last_response.headers['X-RateLimit-Remaining']).to eq(21)
+      end
+    end
+  end  
 end
